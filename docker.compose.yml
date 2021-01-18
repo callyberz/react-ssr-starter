@@ -1,0 +1,30 @@
+version: "2"
+
+services:
+  ${SERVICE}:
+    build:
+      context: .
+      args:
+        MODE: ${MODE}
+    image: ${SERVICE}
+    restart: always
+    environment:
+      MODE: ${MODE}
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET: ${SECRET}
+      PORT: 3000
+      # PUBLIC_HOST: ${PUBLIC_HOST}
+      # BASE_URL: ${BASE_URL}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./build:/opt/app/build
+      - ./src:/opt/app/src
+      - ./package.json:/opt/app/package.json
+    entrypoint: /opt/app/entrypoint.sh
+    command: start
+
+networks:
+  default:
+    external:
+      name: farm

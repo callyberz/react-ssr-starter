@@ -1,21 +1,14 @@
-FROM node:8.10.0-alpine
+FROM node:10-jessie
 
-# Set a working directory
-WORKDIR /usr/src/app
+RUN npm install -g node-gyp
 
-COPY ./build/package.json .
-COPY ./build/yarn.lock .
-
-# Install Node.js dependencies
-RUN yarn install --production --no-progress
+COPY package.json /tmp
+RUN cd /tmp && npm install
+RUN mkdir -p /opt/app && cp -a /tmp/node_modules /opt/app/
 
 # Copy application files
-COPY ./build .
+WORKDIR /opt/app
+COPY . /opt/app
 
-# Run the container under "node" user by default
-USER node
-
-# Set NODE_ENV env variable to "production" for faster expressjs
-ENV NODE_ENV production
-
-CMD [ "node", "server.js" ]
+ARG MODE
+ENV NODE_ENV=${MODE}

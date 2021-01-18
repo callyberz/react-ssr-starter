@@ -11,12 +11,9 @@ import express from 'express';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import http from 'http';
-import expressJwt, { UnauthorizedError as Jwt401Error } from 'express-jwt';
 import { graphql } from 'graphql';
-import expressGraphQL from 'express-graphql';
 import DataLoader from 'dataloader';
 import { ServerStyleSheets, ThemeProvider } from '@material-ui/styles';
-// import jwt from 'jsonwebtoken';
 import nodeFetch from 'node-fetch';
 import React from 'react';
 import ReactDOM from 'react-dom/server';
@@ -27,7 +24,6 @@ import { ApolloServer, AuthenticationError } from 'apollo-server-express';
 import { makeExecutableSchema } from 'apollo-server';
 import { allow, deny, shield } from 'graphql-shield';
 import { GraphQLLocalStrategy, buildContext } from 'graphql-passport';
-
 import App from './components/App';
 import Html from './components/Html';
 import { ErrorPageWithoutStyle } from './routes/error/ErrorPage';
@@ -37,14 +33,13 @@ import createFetch from './core/createFetch';
 import router from './core/router';
 import chunks from './chunk-manifest.json'; // eslint-disable-line import/no-unresolved
 import configureStore from './store/configureStore';
-import { setRuntimeVariable } from './actions/runtime';
 
 import config from './config';
 import schema from './data/schema';
 import resolvers from './data/resolvers';
 import models, { connectDb } from './data/models';
 import loaders from './data/loaders';
-import theme from "./core/theme";
+import theme from './core/theme';
 
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -78,66 +73,18 @@ app.use(bodyParser.json());
 //
 // Authentication
 // -----------------------------------------------------------------------------
-app.use(
-  expressJwt({
-    secret: config.auth.jwt.secret,
-    credentialsRequired: false,
-    getToken: req => req.cookies.id_token,
-  }),
-);
-// Error handler for express-jwt
-app.use((err, req, res, next) => {
-  // eslint-disable-line no-unused-vars
-  if (err instanceof Jwt401Error) {
-    console.error('[express-jwt-error]', req.cookies.id_token);
-    // `clearCookie`, otherwise user can't use web-app until cookie expires
-    res.clearCookie('id_token');
-  }
-  next(err);
-});
-
 // app.use(passport.initialize());
-
-// app.get(
-//   '/login/facebook',
-//   passport.authenticate('facebook', {
-//     scope: ['email', 'user_location'],
-//     session: false,
-//   }),
-// );
-// app.get(
-//   '/login/facebook/return',
-//   passport.authenticate('facebook', {
-//     failureRedirect: '/login',
-//     session: false,
-//   }),
-//   (req, res) => {
-//     const expiresIn = 60 * 60 * 24 * 180; // 180 days
-//     const token = jwt.sign(req.user, config.auth.jwt.secret, { expiresIn });
-//     res.cookie('id_token', token, { maxAge: 1000 * expiresIn, httpOnly: true });
-//     res.redirect('/');
-//   },
-// );
 
 //
 // Register API middleware
 // -----------------------------------------------------------------------------
-// app.use(
-//   '/graphql',
-//   expressGraphQL(req => ({
-//     schema,
-//     graphiql: __DEV__,
-//     rootValue: { request: req },
-//     pretty: __DEV__,
-//   })),
-// );
-
-// use apollo server express
+// Set up Apollo server express
 const masterschema = makeExecutableSchema({
   typeDefs: schema['typeDefs'],
   resolvers,
 });
 
+// graphql permission
 const permissions = shield({
   Query: {
     '*': allow,
@@ -149,8 +96,6 @@ const permissions = shield({
 
 const server = new ApolloServer({
   introspection: true,
-  // typeDefs: schema['typeDefs'],
-  // resolvers: resolvers,
   schema: applyMiddleware(masterschema, permissions),
   formatError: error => {
     // remove the internal sequelize error message
@@ -257,9 +202,6 @@ app.get('*', async (req, res, next) => {
           </App>
         </Provider>,
       ),
-      // <Provider store={store}>
-      //   <App context={context}>{route.component}</App>
-      // </Provider>,
     );
     data.styles = [{ id: 'css', cssText: [...css].join('') }];
 
@@ -318,8 +260,6 @@ app.use((err, req, res, next) => {
 //
 // Launch the server
 // -----------------------------------------------------------------------------
-const isTest = !!config.testdatabaseUrl;
-const isProduction = config.mode === 'production';
 const port = config.port;
 
 if (config.mode == 'production') {
