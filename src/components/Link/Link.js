@@ -44,7 +44,7 @@ class Link extends React.Component {
     }
 
     event.preventDefault();
-    history.push(this.props.to);
+    history.push(`/portal${this.props.to}`);
   };
 
   render() {

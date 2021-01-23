@@ -11,7 +11,7 @@
 
 // The top-level (parent) route
 const routes = {
-  path: '',
+  path: '/portal',
 
   // Keep in mind, routes are evaluated in order
   children: [
